@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Descent — an ocean in depth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #F4F8F9;
+    --ink-dim: rgba(244,248,249,0.72);
+    --ink-faint: rgba(244,248,249,0.46);
+    --glow: #7CFFCB;
+    --glow-dim: rgba(124,255,203,0.55);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    font-family:'Inter', sans-serif;
+    color: var(--ink);
+    background: #0A2A44;
+    overflow-x: hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+  h1,h2{ font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{ color:inherit; }
+
+  .zone{ position:relative; min-height:100vh; overflow:hidden; display:flex; align-items:center; }
+  .zone-inner{ position:relative; z-index:5; max-width:640px; margin:0 auto; padding: 0 32px; text-align:center; }
+  .parallax-layer{ position:absolute; inset:0; will-change: transform; }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.16em; text-transform:uppercase;
+    color: var(--glow-dim); margin-bottom:18px; display:block;
+  }
+  .zone h2{ font-size: clamp(30px, 5vw, 52px); line-height:1.15; margin-bottom:18px; }
+  .zone p.desc{ font-size:16px; color: var(--ink-dim); max-width:460px; margin:0 auto; }
+
+  /* ---------- DEPTH GAUGE (signature element) ---------- */
+  .gauge{
+    position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:200;
+    display:flex; flex-direction:column; align-items:flex-end; gap:2px;
+    font-family:'IBM Plex Mono', monospace; color: var(--ink);
+    background: rgba(4,16,28,0.55); backdrop-filter: blur(6px);
+    border: 1px solid rgba(244,248,249,0.14); border-radius:8px; padding:14px 16px;
+  }
+  .gauge .depth-val{ font-size:22px; line-height:1; }
+  .gauge .depth-unit{ font-size:11px; color: var(--ink-faint); margin-top:4px; }
+  .gauge .divider{ width:100%; height:1px; background: rgba(244,248,249,0.14); margin:9px 0; }
+  .gauge .pressure-val{ font-size:14px; color: var(--glow); }
+  .gauge .pressure-unit{ font-size:10px; color: var(--ink-faint); }
+  .gauge .zone-name{ font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-faint); margin-top:9px; text-align:right; max-width:90px; }
+  @media (max-width:720px){ .gauge{ right:10px; padding:10px 12px; } .gauge .depth-val{ font-size:17px; } }
+
+  /* ---------- HERO / SURFACE ---------- */
+  #surface{ background: linear-gradient(180deg, #BFE9F5 0%, #6EC6E8 55%, #3E9BC9 100%); }
+  #surface .sun{ position:absolute; top:8%; left:50%; width:340px; height:340px; margin-left:-170px; border-radius:50%; background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%); }
+  #surface h1{ font-size: clamp(42px, 8vw, 88px); color:#053349; line-height:0.98; }
+  #surface p.lede{ font-size:17px; color:#0A4A66; max-width:420px; margin: 20px auto 0; }
+  .scroll-cue{ position:absolute; bottom:34px; left:50%; transform:translateX(-50%); z-index:5; font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#0A4A66; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .scroll-cue .stroke{ width:1px; height:32px; background:#0A4A66; animation: cue 2s ease-in-out infinite; }
+  @keyframes cue{ 0%,100%{ opacity:0.2; } 50%{ opacity:1; } }
+
+  /* ---------- SUNLIT ZONE ---------- */
+  #sunlit{ background: linear-gradient(180deg, #3E9BC9 0%, #1D6E9C 100%); }
+  #sunlit h2, #sunlit p.desc{ color: #EAF7FB; }
+
+  /* ---------- TWILIGHT ZONE ---------- */
+  #twilight{ background: linear-gradient(180deg, #1D6E9C 0%, #0B3A5C 100%); }
+
+  /* ---------- MIDNIGHT ZONE ---------- */
+  #midnight{ background: linear-gradient(180deg, #0B3A5C 0%, #061F33 100%); }
+
+  /* ---------- ABYSS ---------- */
+  #abyss{ background: linear-gradient(180deg, #061F33 0%, #020D18 100%); }
+
+  /* ---------- TRENCH ---------- */
+  #trench{ background: linear-gradient(180deg, #020D18 0%, #000406 100%); min-height: 100vh; }
+  #trench .eyebrow{ color: var(--glow); }
+
+  /* ---------- shared decorative shapes ---------- */
+  .bubble{
+    position:absolute; border-radius:50%; border:1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.06);
+    animation: rise linear infinite;
+  }
+  @keyframes rise{
+    from{ transform: translateY(0); opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    to{ transform: translateY(-115vh); opacity:0; }
+  }
+  .glow-dot{
+    position:absolute; border-radius:50%; background: var(--glow);
+    box-shadow: 0 0 12px 4px var(--glow-dim);
+    animation: flicker 3.4s ease-in-out infinite;
+  }
+  @keyframes flicker{ 0%,100%{ opacity:0.35; } 50%{ opacity:1; } }
+
+  .creature{ position:absolute; opacity:0.9; }
+  .creature svg{ display:block; width:100%; height:100%; }
+
+  /* footer */
+  #trench-end{ padding: 100px 32px 90px; text-align:center; position:relative; z-index:5; }
+  #trench-end h2{ font-size: clamp(26px,4vw,38px); color: var(--ink); margin-bottom:16px; }
+  #trench-end p{ color: var(--ink-dim); max-width:440px; margin:0 auto 30px; font-size:15px; }
+  .btn-surface{
+    font-family:'IBM Plex Mono'; font-size:13px; letter-spacing:0.04em; color:#000406;
+    background: var(--glow); border:none; padding:13px 26px; border-radius:6px; text-decoration:none;
+    display:inline-block; transition: transform .15s, background .15s;
+  }
+  .btn-surface:hover{ background:#A6FFDE; transform: translateY(-1px); }
+  .foot-mono{ font-family:'IBM Plex Mono'; font-size:11px; color: var(--ink-faint); margin-top:40px; letter-spacing:0.06em; }
+</style>
+</head>
+<body>
+
+<div class="gauge" id="gauge">
+  <div class="depth-val mono" id="depthVal">0</div>
+  <div class="depth-unit">meters</div>
+  <div class="divider"></div>
+  <div class="pressure-val mono" id="pressureVal">1.0</div>
+  <div class="pressure-unit">ATM</div>
+  <div class="zone-name" id="zoneName">Surface</div>
+</div>
+
+<main>
+
+  <section class="zone" id="surface">
+    <div class="parallax-layer" data-speed="0.15"><div class="sun"></div></div>
+    <div class="parallax-layer" data-speed="0.4" id="surfaceBubbles"></div>
+    <div class="zone-inner">
+      <span class="eyebrow" style="color:#0A4A66;">Begin the dive</span>
+      <h1>The<br>Descent</h1>
+      <p class="lede">Eleven thousand meters of ocean, from sunlight to permanent dark. Scroll down &mdash; the deeper you go, the less light comes with you.</p>
+    </div>
+    <div class="scroll-cue"><span>Scroll to dive</span><span class="stroke"></span></div>
+  </section>
+
+  <section class="zone" id="sunlit">
+    <div class="parallax-layer" data-speed="0.2" id="sunlitFar"></div>
+    <div class="parallax-layer" data-speed="0.55" id="sunlitCreatures"></div>
+    <div class="parallax-layer" data-speed="0.9" id="sunlitNear"></div>
+    <div class="zone-inner">
+      <span class="eyebrow">0&ndash;200m &middot; Sunlit zone</span>
+      <h2>Where the light still reaches.</h2>
+      <p class="desc">Ninety percent of ocean life lives here, in the epipelagic zone, where sunlight still drives photosynthesis and reef fish move in loose, glittering schools.</p>
+    </div>
+  </section>
+
+  <section class="zone" id="twilight">
+    <div class="parallax-layer" data-speed="0.2" id="twilightFar"></div>
+    <div class="parallax-layer" data-speed="0.5" id="twilightCreatures"></div>
+    <div class="parallax-layer" data-speed="0.85" id="twilightNear"></div>
+    <div class="zone-inner">
+      <span class="eyebrow">200&ndash;1,000m &middot; Twilight zone</span>
+      <h2>Blue fades to nothing.</h2>
+      <p class="desc">The mesopelagic zone gets just enough light to see by, not enough to grow by. Jellyfish drift here in slow, deliberate pulses, built for a world with nowhere to hide.</p>
+    </div>
+  </section>
+
+  <section class="zone" id="midnight">
+    <div class="parallax-layer" data-speed="0.15" id="midnightGlow"></div>
+    <div class="parallax-layer" data-speed="0.5" id="midnightCreatures"></div>
+    <div class="zone-inner">
+      <span class="eyebrow">1,000&ndash;4,000m &middot; Midnight zone</span>
+      <h2>Total dark. Every light here is alive.</h2>
+      <p class="desc">No sunlight reaches the bathypelagic zone at all. Everything that glows down here made its own light &mdash; a lure, a warning, or a question no one answers twice.</p>
+    </div>
+  </section>
+
+  <section class="zone" id="abyss">
+    <div class="parallax-layer" data-speed="0.1" id="abyssGlow"></div>
+    <div class="zone-inner">
+      <span class="eyebrow">4,000&ndash;6,000m &middot; The abyss</span>
+      <h2>Pressure enough to fold steel.</h2>
+      <p class="desc">At the abyssopelagic zone, water pressure exceeds 400 atmospheres. Almost nothing lives here &mdash; almost. What does has no eyes left to lose.</p>
+    </div>
+  </section>
+
+  <section class="zone" id="trench">
+    <div class="parallax-layer" data-speed="0.1" id="trenchGlow"></div>
+    <div class="parallax-layer" data-speed="0.4" id="trenchCreature"></div>
+    <div class="zone-inner">
+      <span class="eyebrow">6,000&ndash;11,000m &middot; The trench</span>
+      <h2>The floor of the world.</h2>
+      <p class="desc">This is the Mariana Trench's Challenger Deep &mdash; the deepest point on Earth. Fewer people have stood here than have walked on the Moon.</p>
+    </div>
+  </section>
+
+  <div id="trench-end">
+    <h2>You've gone further than sunlight ever has.</h2>
+    <p>Eleven thousand meters down, and the ocean still isn't finished. Head back up whenever you're ready.</p>
+    <a href="#surface" class="btn-surface">Back to the surface</a>
+    <div class="foot-mono">THE DESCENT &mdash; AN OCEAN IN DEPTH</div>
+  </div>
+
+</main>
+
+<script>
+  // ---------- Utility: seeded-ish random within range ----------
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+
+  // ---------- Populate ambient bubbles ----------
+  function addBubbles(container, count, sizeMin, sizeMax){
+    for(var i=0;i<count;i++){
+      var b = document.createElement('div');
+      b.className = 'bubble';
+      var size = rand(sizeMin, sizeMax);
+      b.style.width = size + 'px';
+      b.style.height = size + 'px';
+      b.style.left = rand(2, 96) + '%';
+      b.style.bottom = rand(-40, 0) + '%';
+      var duration = rand(9, 20);
+      b.style.animationDuration = duration + 's';
+      b.style.animationDelay = (-rand(0, duration)) + 's';
+      container.appendChild(b);
+    }
+  }
+  addBubbles(document.getElementById('surfaceBubbles'), 10, 8, 22);
+
+  // ---------- Populate bioluminescent glow dots ----------
+  function addGlowDots(container, count, sizeMin, sizeMax){
+    for(var i=0;i<count;i++){
+      var d = document.createElement('div');
+      d.className = 'glow-dot';
+      var size = rand(sizeMin, sizeMax);
+      d.style.width = size + 'px';
+      d.style.height = size + 'px';
+      d.style.left = rand(4, 94) + '%';
+      d.style.top = rand(6, 92) + '%';
+      d.style.animationDelay = (-rand(0, 3.4)) + 's';
+      d.style.animationDuration = rand(2.6, 4.4) + 's';
+      container.appendChild(d);
+    }
+  }
+  addGlowDots(document.getElementById('midnightGlow'), 14, 3, 7);
+  addGlowDots(document.getElementById('abyssGlow'), 9, 2, 5);
+  addGlowDots(document.getElementById('trenchGlow'), 6, 2, 4);
+
+  // ---------- Creature SVGs (simple flat silhouettes) ----------
+  var fishSVG = '<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg"><path d="M5 25 Q30 5 70 15 L95 5 L85 25 L95 45 L70 35 Q30 45 5 25 Z" fill="#04314A" opacity="0.55"/></svg>';
+  var jellySVG = '<svg viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg"><path d="M10 30 Q10 5 30 5 Q50 5 50 30 Q50 42 30 42 Q10 42 10 30 Z" fill="#0B3A5C" opacity="0.7"/><path d="M18 42 Q20 65 16 88 M28 42 Q29 68 26 88 M38 42 Q40 65 36 88" stroke="#0B3A5C" stroke-width="2" fill="none" opacity="0.7"/></svg>';
+  var jellyGlowSVG = '<svg viewBox="0 0 60 90" xmlns="http://www.w3.org/2000/svg"><path d="M10 30 Q10 5 30 5 Q50 5 50 30 Q50 42 30 42 Q10 42 10 30 Z" fill="none" stroke="#7CFFCB" stroke-width="1.4" opacity="0.7"/><path d="M18 42 Q20 65 16 88 M30 42 Q31 68 29 88 M42 42 Q44 65 40 88" stroke="#7CFFCB" stroke-width="1.2" fill="none" opacity="0.55"/></svg>';
+  var anglerSVG = '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><ellipse cx="45" cy="35" rx="32" ry="18" fill="#020D18" stroke="#132A38" stroke-width="1"/><path d="M28 22 Q10 5 15 2 Q22 4 26 16" stroke="#132A38" stroke-width="1.4" fill="none"/><circle cx="14" cy="3" r="2.6" fill="#7CFFCB"/><path d="M77 35 L100 22 L100 48 Z" fill="#020D18"/></svg>';
+  var squidSVG = '<svg viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg"><ellipse cx="80" cy="60" rx="34" ry="52" fill="#000406" stroke="#0F1E28" stroke-width="1.2"/><path d="M56 105 Q50 160 40 195 M68 108 Q64 165 58 198 M92 108 Q96 165 102 198 M104 105 Q110 160 120 195" stroke="#0F1E28" stroke-width="2.4" fill="none"/></svg>';
+
+  function scatterCreatures(container, svgs, count, sizeRange, opts){
+    opts = opts || {};
+    for(var i=0;i<count;i++){
+      var el = document.createElement('div');
+      el.className = 'creature';
+      var svg = svgs[Math.floor(Math.random()*svgs.length)];
+      el.innerHTML = svg;
+      var w = rand(sizeRange[0], sizeRange[1]);
+      var ratio = opts.ratio || 0.6;
+      el.style.width = w + 'px';
+      el.style.height = (w * ratio) + 'px';
+      el.style.left = rand(4, 88) + '%';
+      el.style.top = rand(8, 82) + '%';
+      if(opts.flip && Math.random() > 0.5){ el.style.transform = 'scaleX(-1)'; }
+      if(opts.drift){
+        el.style.animation = 'driftY ' + rand(6,11) + 's ease-in-out infinite';
+        el.style.animationDelay = (-rand(0,6)) + 's';
+      }
+      container.appendChild(el);
+    }
+  }
+
+  var styleTag = document.createElement('style');
+  styleTag.textContent = '@keyframes driftY{ 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-16px);} }';
+  document.head.appendChild(styleTag);
+
+  scatterCreatures(document.getElementById('sunlitCreatures'), [fishSVG], 6, [50,90], { flip:true, drift:true });
+  scatterCreatures(document.getElementById('twilightCreatures'), [jellySVG], 4, [50,80], { drift:true });
+  scatterCreatures(document.getElementById('midnightCreatures'), [jellyGlowSVG, anglerSVG], 4, [60,110], { flip:true, drift:true });
+  scatterCreatures(document.getElementById('trenchCreature'), [squidSVG], 1, [180,240], { ratio: 1.25 });
+
+  // ---------- Parallax engine ----------
+  var layers = Array.prototype.slice.call(document.querySelectorAll('.parallax-layer'));
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ticking = false;
+
+  function updateParallax(){
+    layers.forEach(function(layer){
+      var speed = parseFloat(layer.getAttribute('data-speed')) || 0.3;
+      var section = layer.parentElement;
+      var rect = section.getBoundingClientRect();
+      var offset = rect.top * speed * -1;
+      layer.style.transform = 'translateY(' + offset + 'px)';
+    });
+    ticking = false;
+  }
+
+  function onScroll(){
+    if(!ticking && !reduceMotion){
+      requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  if(!reduceMotion){ updateParallax(); }
+
+  // ---------- Depth gauge ----------
+  var depthValEl = document.getElementById('depthVal');
+  var pressureValEl = document.getElementById('pressureVal');
+  var zoneNameEl = document.getElementById('zoneName');
+  var MAX_DEPTH = 11000;
+
+  var zoneBoundaries = [
+    { name: 'Surface', max: 0 },
+    { name: 'Sunlit zone', max: 200 },
+    { name: 'Twilight zone', max: 1000 },
+    { name: 'Midnight zone', max: 4000 },
+    { name: 'The abyss', max: 6000 },
+    { name: 'The trench', max: 11000 }
+  ];
+
+  function currentZoneName(depth){
+    for(var i=0;i<zoneBoundaries.length;i++){
+      if(depth <= zoneBoundaries[i].max || i === zoneBoundaries.length-1){
+        return zoneBoundaries[i].name;
+      }
+    }
+    return 'The trench';
+  }
+
+  function updateGauge(){
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
+    var depth = Math.round(pct * MAX_DEPTH);
+    var pressure = (1 + depth / 10).toFixed(1);
+    depthValEl.textContent = depth.toLocaleString();
+    pressureValEl.textContent = pressure;
+    zoneNameEl.textContent = currentZoneName(depth);
+  }
+  window.addEventListener('scroll', updateGauge, { passive:true });
+  updateGauge();
+</script>
+
+</body>
+</html>
